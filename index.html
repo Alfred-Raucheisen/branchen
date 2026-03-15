@@ -481,7 +481,7 @@ function renderCoachResults(decoded){
   const ovl=cd.filter(d=>d.count>1);
   if(ovl.length)document.getElementById('overlapNote').innerHTML='<strong style="color:var(--navy)">Mehrere Branchen an gleicher Position:</strong> '+ovl.map(d=>'K='+d.origK+'/I='+d.origI+': '+d.labels.join(', ')).join(' · ');
 
-  const srt=[...scored].filter(s=>s.k>0||s.i>0).sort((a,b)=>b.score-a.score||b.avg-a.avg);
+  const srt=[...scored].sort((a,b)=>b.score-a.score||b.avg-a.avg);
   document.getElementById('topTable').innerHTML='<div class="top-row hdr"><div>Branche</div><div>K</div><div>I</div><div>Score</div></div>'+
     srt.map((s,idx)=>'<div class="top-row '+(idx%2===0?'even':'odd')+'"><div>'+s.label+'</div><div><span class="pill pk">'+(s.k||'–')+'</span></div><div><span class="pill pi">'+(s.i||'–')+'</span></div><div><span class="pill ps">'+(s.score>0?s.score:'–')+'</span></div></div>').join('');
 
