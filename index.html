@@ -211,6 +211,7 @@
       <div class="progress-label" id="progressLabel"></div>
     </div>
     <div id="branchCards"></div>
+    <div id="pageWarning" style="display:none;background:#fdecea;border:1px solid #f5c6cb;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#c0392b;line-height:1.6"></div>
     <div class="quiz-nav">
       <button class="btn-nav btn-prev" id="btnPrev" onclick="prevPage()">← Zurück</button>
       <span class="page-counter" id="pageCounter"></span>
@@ -340,7 +341,7 @@ function renderPage() {
     const b = BRANCHES[i];
     const a = answers[i];
     const complete = a.k !== null && a.i !== null;
-    const triggered = (a.k >= 4 || a.i >= 4);
+    const triggered = isTriggered(a);
 
     html += '<div class="branch-card' + (complete ? ' complete' : '') + (triggered ? ' triggered' : '') + '" id="bc-' + i + '">';
     html += '<div class="branch-header"><div class="branch-name">' + b.label + '</div><span class="branch-badge">✓ Bewertet</span></div>';
@@ -363,7 +364,7 @@ function renderPage() {
 
     // Expanded subs
     if (triggered && b.subs.length > 1) {
-      html += '<div class="subs-section"><div class="subs-hint">↳ Bitte die Untergruppen differenzierter einschätzen:</div>';
+      html += '<div class="subs-section"><div class="subs-hint">↳ Bewertung 5 erreicht — bitte Untergruppen differenzieren (optional, aber empfohlen):</div>';
       b.subs.forEach((sub, si) => {
         const sk = (a.subs[si] && a.subs[si].k) || null;
         const sii = (a.subs[si] && a.subs[si].i) || null;
@@ -392,16 +393,17 @@ function renderPage() {
   document.getElementById('branchCards').innerHTML = html;
 }
 
+function isTriggered(a) { return a.k === 5 || a.i === 5; }
+
 function rate(idx, dim, val) {
   answers[idx][dim] = val;
-  // Check trigger: if newly triggered, init subs
   const a = answers[idx];
-  if ((a.k >= 4 || a.i >= 4) && Object.keys(a.subs).length === 0) {
-    // init subs
+  // Init subs when newly triggered
+  if (isTriggered(a) && Object.keys(a.subs).length === 0) {
     BRANCHES[idx].subs.forEach((_, si) => { a.subs[si] = { k: null, i: null }; });
   }
-  // If trigger dropped below 4, clear subs
-  if (a.k < 4 && a.i < 4) { a.subs = {}; }
+  // Clear subs if trigger dropped below 5
+  if (!isTriggered(a)) { a.subs = {}; }
   renderPage();
 }
 
@@ -411,7 +413,36 @@ function rateSub(idx, si, dim, val) {
   renderPage();
 }
 
+function getPageWarnings() {
+  const start = currentPage * PAGE_SIZE;
+  const end = Math.min(start + PAGE_SIZE, BRANCHES.length);
+  const warnings = [];
+  for (let i = start; i < end; i++) {
+    const a = answers[i];
+    // Obergruppe: both required if either set
+    if ((a.k !== null && a.i === null) || (a.k === null && a.i !== null)) {
+      warnings.push(BRANCHES[i].label + ': bitte beide Dimensionen bewerten');
+    }
+    // Untergruppen: if one set, both required
+    Object.entries(a.subs || {}).forEach(([si, sv]) => {
+      if (sv && ((sv.k !== null && sv.i === null) || (sv.k === null && sv.i !== null))) {
+        warnings.push(BRANCHES[i].label + ' → ' + BRANCHES[i].subs[si] + ': bitte beide Dimensionen bewerten');
+      }
+    });
+  }
+  return warnings;
+}
+
 function nextPage() {
+  const warnings = getPageWarnings();
+  if (warnings.length > 0) {
+    const warnEl = document.getElementById('pageWarning');
+    warnEl.innerHTML = '⚠️ ' + warnings.join('<br>⚠️ ');
+    warnEl.style.display = 'block';
+    warnEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    return;
+  }
+  document.getElementById('pageWarning').style.display = 'none';
   if (currentPage === PAGES - 1) { submitAndShow(); return; }
   currentPage++;
   renderPage();
@@ -475,17 +506,27 @@ function renderCoachResults(decoded) {
     return { label: b.label, k, i: iv, avg, subCount, subs: a.subs };
   });
 
-  // Bubble chart
+  // Bubble chart with jitter for overlapping points
   if (chartInstance) { chartInstance.destroy(); }
   const ctx = document.getElementById('bubbleChart').getContext('2d');
-  const chartData = scored
-    .filter(s => s.k > 0 || s.i > 0)
-    .map(s => ({
-      x: s.k,
-      y: s.i,
-      r: Math.max(6, s.subCount * 3 + 6),
-      label: s.label
-    }));
+
+  // Apply jitter to avoid overlap
+  const rawData = scored.filter(s => s.k > 0 || s.i > 0);
+  const seen = {};
+  const chartData = rawData.map(s => {
+    const key = s.k + '_' + s.i;
+    seen[key] = (seen[key] || 0) + 1;
+    const jitter = seen[key] > 1 ? (seen[key] - 1) * 0.18 : 0;
+    const angle = seen[key] * 1.2;
+    return {
+      x: s.k + Math.cos(angle) * jitter,
+      y: s.i + Math.sin(angle) * jitter,
+      r: Math.max(8, s.subCount * 4 + 8),
+      label: s.label,
+      origK: s.k,
+      origI: s.i
+    };
+  });
 
   chartInstance = new Chart(ctx, {
     type: 'bubble',
@@ -515,9 +556,14 @@ function renderCoachResults(decoded) {
           callbacks: {
             label: ctx => {
               const d = ctx.raw;
-              return d.label + ' (K:' + d.x + ' I:' + d.y + ')';
+              return d.label + '  (K: ' + d.origK + '  I: ' + d.origI + ')';
             }
-          }
+          },
+          backgroundColor: 'rgba(26,39,68,0.92)',
+          titleColor: '#C8A84B',
+          bodyColor: 'white',
+          padding: 10,
+          cornerRadius: 8
         }
       },
       scales: {
@@ -537,27 +583,27 @@ function renderCoachResults(decoded) {
     }
   });
 
-  // Add labels to chart
-  const originalDraw = chartInstance.draw.bind(chartInstance);
-  chartInstance.draw = function() {
-    originalDraw();
-    const c = chartInstance;
-    const meta = c.getDatasetMeta(0);
-    const ctx2 = c.ctx;
-    ctx2.save();
-    ctx2.font = '10px DM Sans, sans-serif';
-    ctx2.fillStyle = '#1a2744';
-    ctx2.textAlign = 'center';
-    meta.data.forEach((el, idx) => {
-      const d = chartData[idx];
-      if ((d.x + d.y) / 2 >= 3) {
-        const shortLabel = d.label.length > 20 ? d.label.substring(0, 18) + '…' : d.label;
-        ctx2.fillText(shortLabel, el.x, el.y - el.options.radius - 4);
-      }
-    });
-    ctx2.restore();
-  };
-  chartInstance.draw();
+  // Draw labels for high-scoring bubbles
+  Chart.register({
+    id: 'bubbleLabels',
+    afterDatasetsDraw(chart) {
+      const ctx2 = chart.ctx;
+      const meta = chart.getDatasetMeta(0);
+      ctx2.save();
+      meta.data.forEach((el, idx) => {
+        const d = chartData[idx];
+        const avg = (d.origK + d.origI) / 2;
+        if (avg >= 3.5) {
+          const shortLabel = d.label.length > 22 ? d.label.substring(0, 20) + '…' : d.label;
+          ctx2.font = '600 10px DM Sans, sans-serif';
+          ctx2.fillStyle = avg >= 4 ? '#1a2744' : '#8a6f1a';
+          ctx2.textAlign = 'center';
+          ctx2.fillText(shortLabel, el.x, el.y - el.options.radius - 5);
+        }
+      });
+      ctx2.restore();
+    }
+  });
 
   // Table
   const sorted = [...scored].sort((a, b) => b.avg - a.avg);
