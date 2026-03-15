@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Branchen-Assessment</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #1a2744; --gold: #C8A84B; --cream: #FAF8F4;
+    --light: #EEF3FA; --border: #D4DDF0; --muted: #6b7a99;
+    --blue: #2E75B6; --green: #1E6B3C; --card: #FFFFFF;
+    --amber: #e67e22; --red: #c0392b;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'DM Sans',sans-serif; background:var(--cream); color:var(--navy); min-height:100vh; }
+  .container { max-width:800px; margin:0 auto; padding:0 24px; }
+  .screen { display:none; }
+  .screen.active { display:block; }
+
+  /* HERO */
+  .hero { background:var(--navy); padding:52px 24px 44px; text-align:center; position:relative; overflow:hidden; }
+  .hero::before { content:''; position:absolute; top:-60px; right:-60px; width:220px; height:220px; border-radius:50%; background:rgba(200,168,75,0.12); }
+  .hero::after  { content:''; position:absolute; bottom:-40px; left:-40px; width:160px; height:160px; border-radius:50%; background:rgba(46,117,182,0.15); }
+  .hero .kicker { color:var(--gold); font-size:11px; font-weight:500; letter-spacing:0.2em; text-transform:uppercase; display:block; margin-bottom:12px; position:relative; z-index:1; }
+  .hero h1 { font-family:'Playfair Display',serif; font-size:clamp(30px,5vw,48px); color:white; line-height:1.1; position:relative; z-index:1; }
+  .hero h1 em { font-style:italic; color:var(--gold); }
+  .hero p { color:rgba(255,255,255,0.72); font-size:15px; font-weight:300; margin-top:14px; max-width:500px; margin-left:auto; margin-right:auto; line-height:1.6; position:relative; z-index:1; }
+
+  .kicker { font-size:11px; font-weight:500; letter-spacing:0.2em; text-transform:uppercase; color:var(--gold); margin-bottom:14px; display:block; }
+
+  /* INTRO */
+  #intro { padding-bottom:60px; }
+  .intro-body { padding:36px 0 0; }
+
+  .info-cards { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:28px; }
+  .info-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px 14px; text-align:center; }
+  .info-card .num { font-family:'Playfair Display',serif; font-size:28px; color:var(--gold); opacity:0.8; margin-bottom:4px; }
+  .info-card p { font-size:12px; color:var(--muted); line-height:1.4; }
+
+  .scale-boxes { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:28px; }
+  .scale-box { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px 20px; }
+  .scale-box h3 { font-size:12px; font-weight:600; color:var(--navy); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:12px; }
+  .scale-item { display:flex; gap:8px; align-items:flex-start; margin-bottom:6px; font-size:12px; color:var(--muted); line-height:1.3; }
+  .sn { background:var(--navy); color:white; border-radius:4px; padding:1px 6px; font-weight:600; font-size:11px; flex-shrink:0; min-width:18px; text-align:center; }
+  .sn.g { background:var(--gold); }
+
+  .hint-expand { background:rgba(200,168,75,0.1); border:1px solid rgba(200,168,75,0.3); border-radius:10px; padding:12px 16px; margin-bottom:28px; font-size:13px; color:var(--muted); line-height:1.5; display:flex; gap:8px; }
+
+  .name-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:28px; }
+  .name-field label { display:block; font-size:11px; font-weight:500; color:var(--muted); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:6px; }
+  .name-field input { width:100%; padding:12px 14px; border:1.5px solid var(--border); border-radius:10px; font-family:'DM Sans',sans-serif; font-size:15px; color:var(--navy); background:var(--card); transition:border-color 0.2s; }
+  .name-field input:focus { outline:none; border-color:var(--gold); }
+
+  .btn-primary { background:var(--navy); color:white; border:none; border-radius:12px; padding:16px 48px; font-family:'DM Sans',sans-serif; font-size:16px; font-weight:500; cursor:pointer; transition:all 0.2s; }
+  .btn-primary:hover { background:var(--blue); transform:translateY(-1px); }
+
+  /* QUIZ */
+  #quiz { padding:32px 0 80px; }
+  .progress-bar { height:3px; background:var(--border); border-radius:2px; margin-bottom:6px; overflow:hidden; }
+  .progress-fill { height:100%; background:var(--gold); border-radius:2px; transition:width 0.4s ease; }
+  .progress-label { font-size:12px; color:var(--muted); text-align:right; margin-bottom:24px; }
+
+  /* BRANCH CARD */
+  .branch-card { background:var(--card); border:1.5px solid var(--border); border-radius:16px; padding:28px; margin-bottom:16px; transition:border-color 0.2s; }
+  .branch-card.complete { border-color:rgba(30,107,60,0.4); }
+  .branch-card.triggered { border-color:var(--gold); }
+
+  .branch-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; gap:12px; }
+  .branch-name { font-family:'Playfair Display',serif; font-size:17px; color:var(--navy); font-weight:700; line-height:1.3; }
+  .branch-badge { font-size:11px; background:rgba(30,107,60,0.1); color:var(--green); border-radius:20px; padding:3px 10px; flex-shrink:0; font-weight:500; display:none; }
+  .branch-card.complete .branch-badge { display:block; }
+
+  .rating-section { margin-bottom:16px; }
+  .rating-section:last-child { margin-bottom:0; }
+  .rating-label { font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px; }
+
+  .stars { display:flex; gap:5px; align-items:center; }
+  .star-end { font-size:11px; color:var(--muted); min-width:48px; }
+  .star-end.right { text-align:right; }
+  .star-btns { display:flex; gap:4px; flex:1; justify-content:center; }
+  .s-btn { width:42px; height:36px; border:1.5px solid var(--border); border-radius:8px; background:transparent; font-size:14px; font-weight:600; color:var(--muted); cursor:pointer; transition:all 0.15s; }
+  .s-btn:hover { border-color:var(--gold); color:var(--gold); }
+  .s-btn.sel-k { background:var(--navy); border-color:var(--navy); color:white; }
+  .s-btn.sel-i { background:var(--gold); border-color:var(--gold); color:white; }
+  .s-btn.sel-p { background:var(--blue); border-color:var(--blue); color:white; }
+
+  /* EXPANDABLE SUBS */
+  .subs-section { border-top:1px solid var(--border); margin-top:16px; padding-top:16px; animation:fadeDown 0.3s ease; }
+  @keyframes fadeDown { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+  .subs-hint { font-size:12px; color:var(--gold); font-weight:500; margin-bottom:12px; }
+  .sub-item { background:var(--light); border-radius:10px; padding:12px 14px; margin-bottom:8px; }
+  .sub-name { font-size:13px; color:var(--navy); margin-bottom:10px; font-weight:500; }
+  .sub-stars { display:flex; gap:4px; flex:1; justify-content:flex-start; }
+  .s-btn-sm { width:36px; height:30px; border:1.5px solid var(--border); border-radius:6px; background:white; font-size:12px; font-weight:600; color:var(--muted); cursor:pointer; transition:all 0.15s; }
+  .s-btn-sm:hover { border-color:var(--navy); color:var(--navy); }
+  .s-btn-sm.sel-k { background:var(--navy); border-color:var(--navy); color:white; }
+  .s-btn-sm.sel-i { background:var(--gold); border-color:var(--gold); color:white; }
+
+  /* NAV */
+  .quiz-nav { display:flex; justify-content:space-between; align-items:center; margin-top:24px; }
+  .btn-nav { padding:12px 28px; border-radius:10px; font-family:'DM Sans',sans-serif; font-size:15px; cursor:pointer; transition:all 0.2s; font-weight:500; }
+  .btn-prev { background:transparent; border:1.5px solid var(--border); color:var(--muted); }
+  .btn-prev:hover { border-color:var(--gold); color:var(--gold); }
+  .btn-next { background:var(--navy); border:none; color:white; }
+  .btn-next:hover { background:var(--blue); }
+  .page-counter { font-size:13px; color:var(--muted); }
+
+  /* CONFIRMATION */
+  #confirmation { padding:80px 0; }
+  .conf-card { background:var(--card); border:1px solid var(--border); border-radius:20px; padding:48px 40px; text-align:center; max-width:520px; margin:0 auto; }
+  .conf-icon { width:64px; height:64px; background:rgba(30,107,60,0.1); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:28px; margin:0 auto 24px; }
+  .conf-card h2 { font-family:'Playfair Display',serif; font-size:28px; color:var(--navy); margin-bottom:12px; }
+  .conf-card p { color:var(--muted); font-size:15px; line-height:1.65; margin-bottom:8px; }
+  .conf-status { display:inline-block; margin-top:20px; padding:10px 20px; border-radius:8px; font-size:14px; font-weight:500; }
+  .conf-status.sending { background:var(--light); color:var(--muted); }
+  .conf-status.success { background:#e8f5e9; color:var(--green); }
+  .conf-status.error   { background:#fdecea; color:var(--red); border:1px solid #f5c6cb; }
+
+  /* RESULTS */
+  #results { padding:0 0 80px; }
+  .results-body { padding:36px 0 0; }
+  .results-meta { font-size:14px; color:var(--muted); margin-bottom:32px; }
+
+  /* BUBBLE CHART */
+  .chart-wrap { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; margin-bottom:32px; }
+  .chart-wrap h3 { font-family:'Playfair Display',serif; font-size:18px; color:var(--navy); margin-bottom:6px; }
+  .chart-sub { font-size:12px; color:var(--muted); margin-bottom:20px; }
+  canvas#bubbleChart { width:100% !important; }
+
+  /* TOP TABLE */
+  .top-section { margin-bottom:32px; }
+  .top-section h3 { font-family:'Playfair Display',serif; font-size:18px; color:var(--navy); margin-bottom:16px; }
+  .top-row { display:grid; grid-template-columns:1fr 80px 80px 80px; gap:8px; align-items:center; padding:10px 14px; border-radius:10px; margin-bottom:6px; font-size:13px; }
+  .top-row.header { background:var(--navy); color:white; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; border-radius:8px; }
+  .top-row.header div { color:rgba(255,255,255,0.8); }
+  .top-row.even { background:var(--light); }
+  .top-row.odd { background:var(--card); border:1px solid var(--border); }
+  .top-row .pill { display:inline-block; border-radius:12px; padding:2px 8px; font-size:11px; font-weight:600; text-align:center; }
+  .pill-k { background:rgba(26,39,68,0.1); color:var(--navy); }
+  .pill-i { background:rgba(200,168,75,0.15); color:#8a6f1a; }
+  .pill-p { background:rgba(46,117,182,0.1); color:var(--blue); }
+
+  /* RAW */
+  .raw-section { margin-top:24px; }
+  .raw-toggle { background:none; border:none; color:var(--muted); font-size:13px; cursor:pointer; text-decoration:underline; }
+  .raw-data { font-family:monospace; font-size:11px; color:var(--muted); background:var(--light); border-radius:8px; padding:14px 16px; margin-top:10px; line-height:1.9; display:none; word-break:break-all; max-height:300px; overflow-y:auto; }
+
+  .btn-restart { display:inline-block; margin-top:24px; background:transparent; border:1.5px solid var(--border); color:var(--muted); border-radius:10px; padding:12px 28px; font-family:'DM Sans',sans-serif; font-size:14px; cursor:pointer; transition:all 0.2s; }
+  .btn-restart:hover { border-color:var(--gold); color:var(--gold); }
+
+  @media(max-width:580px) {
+    .info-cards { grid-template-columns:1fr; }
+    .scale-boxes { grid-template-columns:1fr; }
+    .name-row { grid-template-columns:1fr; }
+    .top-row { grid-template-columns:1fr 56px 56px 56px; font-size:12px; }
+    .s-btn { width:36px; height:32px; font-size:13px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- INTRO -->
+<div id="intro" class="screen active">
+  <div class="hero">
+    <span class="kicker">Assessment 4 von 5</span>
+    <h1>Branchen-<em>Assessment</em></h1>
+    <p>Wo liegen Ihre Märkte — und wie attraktiv sind sie? Basierend auf NOGA 2025, erweitert um relevante Wachstumsbranchen.</p>
+  </div>
+  <div class="container intro-body">
+    <div class="info-cards">
+      <div class="info-card"><div class="num">22</div><p>Branchengruppen nach NOGA 2025</p></div>
+      <div class="info-card"><div class="num">90</div><p>Untergruppen bei Bedarf</p></div>
+      <div class="info-card"><div class="num">~15'</div><p>Minuten für ehrliche Einschätzung</p></div>
+    </div>
+    <div class="scale-boxes">
+      <div class="scale-box">
+        <h3>Kompetenz</h3>
+        <div class="scale-item"><span class="sn">1</span> Keine / kaum Erfahrung</div>
+        <div class="scale-item"><span class="sn">2</span> Grundkenntnisse</div>
+        <div class="scale-item"><span class="sn">3</span> Solide, nicht spezialisiert</div>
+        <div class="scale-item"><span class="sn">4</span> Hohe, vertiefte Kenntnisse</div>
+        <div class="scale-item"><span class="sn g">5</span> Expertenstatus</div>
+      </div>
+      <div class="scale-box">
+        <h3>Interesse</h3>
+        <div class="scale-item"><span class="sn">1</span> Kaum Interesse</div>
+        <div class="scale-item"><span class="sn">2</span> Verhaltenes Interesse</div>
+        <div class="scale-item"><span class="sn">3</span> Neutral / offen</div>
+        <div class="scale-item"><span class="sn">4</span> Starkes Interesse</div>
+        <div class="scale-item"><span class="sn g">5</span> Begeisterung</div>
+      </div>
+    </div>
+    <div class="hint-expand">
+      <span>💡</span>
+      <span>Bei einer Bewertung von <strong>4 oder 5</strong> in Kompetenz oder Interesse öffnen sich automatisch die Untergruppen — für eine differenziertere Einschätzung.</span>
+    </div>
+    <div class="name-row">
+      <div class="name-field"><label>Ihr Name</label><input type="text" id="nameInput" placeholder="Vorname Nachname"></div>
+      <div class="name-field"><label>Datum</label><input type="date" id="dateInput"></div>
+    </div>
+    <button class="btn-primary" onclick="startQuiz()">Assessment starten →</button>
+  </div>
+</div>
+
+<!-- QUIZ -->
+<div id="quiz" class="screen">
+  <div class="container">
+    <div style="padding-top:32px">
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-label" id="progressLabel"></div>
+    </div>
+    <div id="branchCards"></div>
+    <div class="quiz-nav">
+      <button class="btn-nav btn-prev" id="btnPrev" onclick="prevPage()">← Zurück</button>
+      <span class="page-counter" id="pageCounter"></span>
+      <button class="btn-nav btn-next" id="btnNext" onclick="nextPage()">Weiter →</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRMATION -->
+<div id="confirmation" class="screen">
+  <div class="container">
+    <div class="conf-card">
+      <div class="conf-icon">✓</div>
+      <h2 id="conf-name">Vielen Dank!</h2>
+      <p>Ihre Einschätzungen wurden erfasst. Ihr Coach wird die Auswertung im nächsten Gespräch mit Ihnen besprechen.</p>
+      <p style="font-size:13px;color:var(--muted)">Sie können dieses Fenster jetzt schliessen.</p>
+      <div id="conf-sending" class="conf-status sending">⏳ Auswertung wird übermittelt…</div>
+    </div>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div id="results" class="screen">
+  <div class="hero">
+    <span class="kicker">Coach-Auswertung</span>
+    <h1>Branchen-<em>Assessment</em></h1>
+  </div>
+  <div class="container results-body">
+    <h2 id="resultName" style="font-family:'Playfair Display',serif;font-size:32px;color:var(--navy);margin-bottom:4px"></h2>
+    <div class="results-meta" id="resultMeta"></div>
+
+    <div class="chart-wrap">
+      <h3>Sweet-Spot-Matrix</h3>
+      <div class="chart-sub">X = Kompetenz · Y = Interesse · Grösse = Tiefe der Untergruppen-Bewertungen</div>
+      <canvas id="bubbleChart" height="400"></canvas>
+    </div>
+
+    <div class="top-section">
+      <h3>Alle Branchen — sortiert nach Gesamtpotenzial</h3>
+      <div id="topTable"></div>
+    </div>
+
+    <div class="raw-section">
+      <button class="raw-toggle" onclick="toggleRaw()">Rohdaten anzeigen</button>
+      <div class="raw-data" id="rawData"></div>
+    </div>
+    <div style="text-align:center">
+      <button class="btn-restart" onclick="restartCoach()">Neues Assessment starten</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+emailjs.init({ publicKey: 'X5DcsZZxy0M4C--XH' });
+const EMAILJS_SERVICE  = 'service_yw6gsbd';
+const EMAILJS_TEMPLATE = 'template_obuh676'; // ← update if you create a separate template
+
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const BRANCHES = [
+  { label: 'Land- und Forstwirtschaft, Fischerei', subs: ['Landwirtschaft, Jagd und Tätigkeiten', 'Forstwirtschaft und Holzeinschlag', 'Fischerei und Aquakultur'] },
+  { label: 'Bergbau und Gewinnung von Steinen und Erden', subs: ['Kohlenbergbau', 'Gewinnung von Erdöl und Erdgas', 'Erzbergbau', 'Gewinnung von Steinen und Erden', 'Dienstleistungen für den Bergbau'] },
+  { label: 'Verarbeitendes Gewerbe / Herstellung von Waren', subs: ['Herstellung von Nahrungs- und Futtermitteln', 'Getränkeherstellung', 'Herstellung von Textilien und Bekleidung', 'Herstellung von chemischen Erzeugnissen', 'Herstellung von pharmazeutischen Erzeugnissen', 'Herstellung von Gummi- und Kunststoffwaren', 'Metallerzeugung und Metallerzeugnisse', 'Datenverarbeitungsgeräte und Elektronik', 'Maschinenbau', 'Herstellung von Kraftwagen und Fahrzeugen', 'Herstellung von sonstigen Waren und Möbeln', 'Reparatur und Installation von Maschinen'] },
+  { label: 'Energieversorgung', subs: ['Konventionelle Energieversorgung (Strom, Gas, Wärme)', 'Erneuerbare Energien & Klimainnovation', 'Nuklearenergie und Energieinfrastruktur'] },
+  { label: 'Wasserversorgung, Abwasser- und Abfallentsorgung', subs: ['Wasserversorgung und Abwasserentsorgung', 'Abfallsammlung, -verwertung und -beseitigung', 'Kreislaufwirtschaft & Recyclingtechnologien', 'Beseitigung von Umweltverschmutzungen'] },
+  { label: 'Baugewerbe', subs: ['Hochbau', 'Tiefbau', 'Vorbereitende Baustellenarbeiten und Bauinstallation'] },
+  { label: 'Handel', subs: ['Grosshandel', 'Einzelhandel', 'Luxusgüter & Uhrenindustrie'] },
+  { label: 'Verkehr und Lagerei', subs: ['Landverkehr und Rohrfernleitungen', 'Schifffahrt', 'Luftfahrt', 'Lagerei und Dienstleistungen für den Verkehr', 'Post-, Kurier- und Expressdienste'] },
+  { label: 'Gastgewerbe / Beherbergung und Gastronomie', subs: ['Beherbergung', 'Gastronomie'] },
+  { label: 'Medien, Verlagswesen und Rundfunk', subs: ['Verlagswesen', 'Film, Fernsehen und Rundfunk', 'Nachrichtenagenturen und Medienverbreitung', 'Kreativwirtschaft & Influencer Economy'] },
+  { label: 'Telekommunikation, IT und Digitalwirtschaft', subs: ['Telekommunikation', 'Software und IT-Dienstleistungen', 'Datenverarbeitung und Hosting', 'Digital Economy & Plattformen', 'Blockchain und Digitale Assets', 'Cybersecurity', 'Krypto & DeFi'] },
+  { label: 'Finanz- und Versicherungsdienstleistungen', subs: ['Erbringung von Finanzdienstleistungen', 'Private Banking & Wealth Management', 'Family Office & Stiftungen', 'Versicherungen und Pensionskassen', 'Mit Finanz- und Versicherungsdienstleistungen verbundene Tätigkeiten'] },
+  { label: 'Grundstücks- und Wohnungswesen', subs: ['Grundstücks- und Wohnungswesen'] },
+  { label: 'Wissenschaftliche und technische Dienstleistungen', subs: ['Rechts- und Steuerberatung, Wirtschaftsprüfung', 'Unternehmensberatung und -führung', 'Architektur- und Ingenieurbüros', 'Forschung und Entwicklung', 'Werbung, Marktforschung und PR', 'Sonstige wissenschaftliche und technische Tätigkeiten'] },
+  { label: 'Sonstige wirtschaftliche Dienstleistungen', subs: ['Vermietung und Leasing', 'Arbeitskräftevermittlung und -überlassung', 'Reisebüros und Reiseveranstalter', 'Wach- und Sicherheitsdienste', 'Gebäudebetreuung und Garten- und Landschaftsbau', 'Wirtschaftliche Dienstleistungen für Unternehmen'] },
+  { label: 'Öffentliche Verwaltung und Verteidigung', subs: ['Öffentliche Verwaltung, Verteidigung, Sozialversicherung'] },
+  { label: 'Erziehung und Unterricht', subs: ['Erziehung und Unterricht'] },
+  { label: 'Gesundheits- und Sozialwesen', subs: ['Gesundheitswesen', 'Life Sciences & Biotech', 'Pharma & MedTech', 'Heime und Sozialwesen'] },
+  { label: 'Kunst, Sport und Erholung', subs: ['Kunstschaffende Tätigkeiten und darstellende Kunst', 'Bibliotheken, Archive, Museen', 'Spiel-, Wett- und Lotteriewesen', 'Sport und Unterhaltung', 'Gaming & eSports', 'Sportverbände & internationaler Sport'] },
+  { label: 'Sonstige Dienstleistungen', subs: ['Interessenvertretungen und Verbände', 'NGOs & internationale Organisationen', 'Reparatur von Geräten', 'Überwiegend persönliche Dienstleistungen'] },
+  { label: 'Exterritoriale Organisationen', subs: ['Exterritoriale Organisationen und Körperschaften', 'Diplomatische Missionen und internationale Institutionen'] },
+  { label: 'Neue Wirtschaft & Emerging Markets', subs: ['Space Economy', 'Künstliche Intelligenz & Automation', 'Metaverse & Extended Reality'] }
+];
+
+// Pages: 4 branches per page
+const PAGE_SIZE = 4;
+const PAGES = Math.ceil(BRANCHES.length / PAGE_SIZE);
+
+// State
+let answers = BRANCHES.map(() => ({ k: null, i: null, subs: {} }));
+let currentPage = 0;
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
+  const params = new URLSearchParams(location.search);
+  const payload = params.get('coach');
+  if (payload) {
+    try { renderCoachResults(JSON.parse(atob(payload))); }
+    catch(e) { console.error('Invalid payload', e); }
+  }
+});
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function startQuiz() { showScreen('quiz'); renderPage(); }
+
+// ── RENDER PAGE ───────────────────────────────────────────────────────────────
+function renderPage() {
+  const pct = (currentPage / PAGES) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = 'Seite ' + (currentPage + 1) + ' von ' + PAGES;
+  document.getElementById('pageCounter').textContent = (currentPage + 1) + ' / ' + PAGES;
+  document.getElementById('btnPrev').style.visibility = currentPage === 0 ? 'hidden' : 'visible';
+  document.getElementById('btnNext').textContent = currentPage === PAGES - 1 ? 'Absenden →' : 'Weiter →';
+
+  const start = currentPage * PAGE_SIZE;
+  const end = Math.min(start + PAGE_SIZE, BRANCHES.length);
+
+  let html = '';
+  for (let i = start; i < end; i++) {
+    const b = BRANCHES[i];
+    const a = answers[i];
+    const complete = a.k !== null && a.i !== null;
+    const triggered = (a.k >= 4 || a.i >= 4);
+
+    html += '<div class="branch-card' + (complete ? ' complete' : '') + (triggered ? ' triggered' : '') + '" id="bc-' + i + '">';
+    html += '<div class="branch-header"><div class="branch-name">' + b.label + '</div><span class="branch-badge">✓ Bewertet</span></div>';
+
+    // Kompetenz
+    html += '<div class="rating-section"><div class="rating-label">Kompetenz</div>';
+    html += '<div class="stars"><span class="star-end">keine</span><div class="star-btns">';
+    for (let v = 1; v <= 5; v++) {
+      html += '<button class="s-btn ' + (a.k === v ? 'sel-k' : '') + '" onclick="rate(' + i + ',\'k\',' + v + ')">' + v + '</button>';
+    }
+    html += '</div><span class="star-end right">Experte</span></div></div>';
+
+    // Interesse
+    html += '<div class="rating-section"><div class="rating-label">Interesse</div>';
+    html += '<div class="stars"><span class="star-end">gering</span><div class="star-btns">';
+    for (let v = 1; v <= 5; v++) {
+      html += '<button class="s-btn ' + (a.i === v ? 'sel-i' : '') + '" onclick="rate(' + i + ',\'i\',' + v + ')">' + v + '</button>';
+    }
+    html += '</div><span class="star-end right">Begeisterung</span></div></div>';
+
+    // Expanded subs
+    if (triggered && b.subs.length > 1) {
+      html += '<div class="subs-section"><div class="subs-hint">↳ Bitte die Untergruppen differenzierter einschätzen:</div>';
+      b.subs.forEach((sub, si) => {
+        const sk = (a.subs[si] && a.subs[si].k) || null;
+        const sii = (a.subs[si] && a.subs[si].i) || null;
+        html += '<div class="sub-item">';
+        html += '<div class="sub-name">' + sub + '</div>';
+        html += '<div style="display:flex;gap:16px;flex-wrap:wrap">';
+        // Sub Kompetenz
+        html += '<div><div class="rating-label" style="margin-bottom:6px">Kompetenz</div><div class="sub-stars">';
+        for (let v = 1; v <= 5; v++) {
+          html += '<button class="s-btn-sm ' + (sk === v ? 'sel-k' : '') + '" onclick="rateSub(' + i + ',' + si + ',\'k\',' + v + ')">' + v + '</button>';
+        }
+        html += '</div></div>';
+        // Sub Interesse
+        html += '<div><div class="rating-label" style="margin-bottom:6px">Interesse</div><div class="sub-stars">';
+        for (let v = 1; v <= 5; v++) {
+          html += '<button class="s-btn-sm ' + (sii === v ? 'sel-i' : '') + '" onclick="rateSub(' + i + ',' + si + ',\'i\',' + v + ')">' + v + '</button>';
+        }
+        html += '</div></div>';
+        html += '</div></div>';
+      });
+      html += '</div>';
+    }
+
+    html += '</div>';
+  }
+  document.getElementById('branchCards').innerHTML = html;
+}
+
+function rate(idx, dim, val) {
+  answers[idx][dim] = val;
+  // Check trigger: if newly triggered, init subs
+  const a = answers[idx];
+  if ((a.k >= 4 || a.i >= 4) && Object.keys(a.subs).length === 0) {
+    // init subs
+    BRANCHES[idx].subs.forEach((_, si) => { a.subs[si] = { k: null, i: null }; });
+  }
+  // If trigger dropped below 4, clear subs
+  if (a.k < 4 && a.i < 4) { a.subs = {}; }
+  renderPage();
+}
+
+function rateSub(idx, si, dim, val) {
+  if (!answers[idx].subs[si]) answers[idx].subs[si] = { k: null, i: null };
+  answers[idx].subs[si][dim] = val;
+  renderPage();
+}
+
+function nextPage() {
+  if (currentPage === PAGES - 1) { submitAndShow(); return; }
+  currentPage++;
+  renderPage();
+}
+
+function prevPage() {
+  if (currentPage > 0) { currentPage--; renderPage(); }
+}
+
+// ── SUBMIT ────────────────────────────────────────────────────────────────────
+function submitAndShow() {
+  const name = document.getElementById('nameInput').value.trim() || '(kein Name)';
+  const date = document.getElementById('dateInput').value || new Date().toLocaleDateString('de-CH');
+
+  const payload = btoa(JSON.stringify({ answers, name, date }));
+  const coachUrl = location.origin + location.pathname + '?coach=' + payload;
+
+  // Summary for email
+  const top5 = answers
+    .map((a, i) => ({ label: BRANCHES[i].label, score: ((a.k || 0) + (a.i || 0)) / 2 }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5)
+    .map(x => x.label + ': ' + x.score.toFixed(1))
+    .join('\n');
+
+  showScreen('confirmation');
+  document.getElementById('conf-name').textContent = 'Vielen Dank' + (name !== '(kein Name)' ? ', ' + name + '!' : '!');
+
+  emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, {
+    coachee_name: name,
+    date: date,
+    coach_url: coachUrl + '\n\n── Top 5 Branchen ──\n' + top5
+  }).then(() => {
+    const el = document.getElementById('conf-sending');
+    el.textContent = '✓ Auswertung wurde an den Coach übermittelt.';
+    el.className = 'conf-status success';
+  }).catch(() => {
+    const el = document.getElementById('conf-sending');
+    el.textContent = '⚠️ Übermittlung fehlgeschlagen – bitte Coach direkt informieren.';
+    el.className = 'conf-status error';
+  });
+}
+
+// ── COACH RESULTS ─────────────────────────────────────────────────────────────
+let chartInstance = null;
+
+function renderCoachResults(decoded) {
+  const { answers: ans, name, date } = decoded;
+  showScreen('results');
+
+  document.getElementById('resultName').textContent = name || 'Auswertung';
+  document.getElementById('resultMeta').textContent = (date || '') + ' · Branchen-Assessment';
+
+  // Compute scores
+  const scored = BRANCHES.map((b, i) => {
+    const a = ans[i] || { k: null, i: null, subs: {} };
+    const k = a.k || 0;
+    const iv = a.i || 0;
+    const subCount = Object.values(a.subs || {}).filter(s => s && (s.k >= 4 || s.i >= 4)).length;
+    const avg = (k + iv) / 2;
+    return { label: b.label, k, i: iv, avg, subCount, subs: a.subs };
+  });
+
+  // Bubble chart
+  if (chartInstance) { chartInstance.destroy(); }
+  const ctx = document.getElementById('bubbleChart').getContext('2d');
+  const chartData = scored
+    .filter(s => s.k > 0 || s.i > 0)
+    .map(s => ({
+      x: s.k,
+      y: s.i,
+      r: Math.max(6, s.subCount * 3 + 6),
+      label: s.label
+    }));
+
+  chartInstance = new Chart(ctx, {
+    type: 'bubble',
+    data: {
+      datasets: [{
+        data: chartData,
+        backgroundColor: chartData.map(d => {
+          const avg = (d.x + d.y) / 2;
+          if (avg >= 4) return 'rgba(26,39,68,0.75)';
+          if (avg >= 3) return 'rgba(200,168,75,0.65)';
+          return 'rgba(212,221,240,0.7)';
+        }),
+        borderColor: chartData.map(d => {
+          const avg = (d.x + d.y) / 2;
+          if (avg >= 4) return '#1a2744';
+          if (avg >= 3) return '#C8A84B';
+          return '#D4DDF0';
+        }),
+        borderWidth: 1.5
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const d = ctx.raw;
+              return d.label + ' (K:' + d.x + ' I:' + d.y + ')';
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          min: 0, max: 5.5,
+          title: { display: true, text: 'Kompetenz', color: '#6b7a99', font: { size: 12 } },
+          ticks: { stepSize: 1, color: '#6b7a99' },
+          grid: { color: '#EEF3FA' }
+        },
+        y: {
+          min: 0, max: 5.5,
+          title: { display: true, text: 'Interesse', color: '#6b7a99', font: { size: 12 } },
+          ticks: { stepSize: 1, color: '#6b7a99' },
+          grid: { color: '#EEF3FA' }
+        }
+      }
+    }
+  });
+
+  // Add labels to chart
+  const originalDraw = chartInstance.draw.bind(chartInstance);
+  chartInstance.draw = function() {
+    originalDraw();
+    const c = chartInstance;
+    const meta = c.getDatasetMeta(0);
+    const ctx2 = c.ctx;
+    ctx2.save();
+    ctx2.font = '10px DM Sans, sans-serif';
+    ctx2.fillStyle = '#1a2744';
+    ctx2.textAlign = 'center';
+    meta.data.forEach((el, idx) => {
+      const d = chartData[idx];
+      if ((d.x + d.y) / 2 >= 3) {
+        const shortLabel = d.label.length > 20 ? d.label.substring(0, 18) + '…' : d.label;
+        ctx2.fillText(shortLabel, el.x, el.y - el.options.radius - 4);
+      }
+    });
+    ctx2.restore();
+  };
+  chartInstance.draw();
+
+  // Table
+  const sorted = [...scored].sort((a, b) => b.avg - a.avg);
+  let tableHtml = '<div class="top-row header"><div>Branche</div><div>K</div><div>I</div><div>Ø</div></div>';
+  sorted.forEach((s, idx) => {
+    if (s.k === 0 && s.i === 0) return;
+    const cls = idx % 2 === 0 ? 'even' : 'odd';
+    tableHtml += '<div class="top-row ' + cls + '">'
+      + '<div>' + s.label + '</div>'
+      + '<div><span class="pill pill-k">' + (s.k || '–') + '</span></div>'
+      + '<div><span class="pill pill-i">' + (s.i || '–') + '</span></div>'
+      + '<div><span class="pill pill-p">' + (s.avg > 0 ? s.avg.toFixed(1) : '–') + '</span></div>'
+      + '</div>';
+  });
+  document.getElementById('topTable').innerHTML = tableHtml;
+
+  // Raw
+  const raw = scored.map(s => {
+    let line = s.label + ': K=' + (s.k || '–') + ' I=' + (s.i || '–');
+    const subEntries = Object.entries(s.subs || {})
+      .filter(([si, sv]) => sv && (sv.k || sv.i))
+      .map(([si, sv]) => BRANCHES[scored.indexOf(s)]?.subs[si] + ' K=' + (sv.k || '–') + ' I=' + (sv.i || '–'));
+    if (subEntries.length) line += '\n  ' + subEntries.join('\n  ');
+    return line;
+  }).join('\n\n');
+  document.getElementById('rawData').textContent = raw;
+}
+
+function toggleRaw() {
+  const el = document.getElementById('rawData');
+  el.style.display = el.style.display === 'block' ? 'none' : 'block';
+}
+
+function restartCoach() {
+  answers = BRANCHES.map(() => ({ k: null, i: null, subs: {} }));
+  currentPage = 0;
+  history.replaceState(null, '', location.pathname);
+  showScreen('intro');
+}
+</script>
+</body>
+</html>
