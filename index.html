@@ -525,6 +525,8 @@ function renderCoachResults(decoded){
   document.getElementById('top5Grid').innerHTML =
     top5Card('Top 5 Kompetenz', 'var(--navy)', top5k, 'k') +
     top5Card('Top 5 Interesse', 'var(--gold)', top5i, 'i');
+
+  const grp={};
   scored.filter(s=>s.k>0&&s.i>0).forEach(s=>{
     const key=s.k+'_'+s.i;
     if(!grp[key])grp[key]=[];grp[key].push(s);
