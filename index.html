@@ -122,7 +122,7 @@
   .raw-data{font-family:monospace;font-size:11px;color:var(--muted);background:var(--light);border-radius:8px;padding:14px 16px;margin-top:10px;line-height:1.9;display:none;word-break:break-all;max-height:320px;overflow-y:auto;}
   .btn-restart{display:inline-block;margin-top:24px;background:transparent;border:1.5px solid var(--border);color:var(--muted);border-radius:10px;padding:12px 28px;font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;transition:all 0.2s;}
   .btn-restart:hover{border-color:var(--gold);color:var(--gold);}
-  @media(max-width:580px){.info-cards,.scale-boxes,.name-row{grid-template-columns:1fr;}.top-row{grid-template-columns:1fr 50px 50px 44px;font-size:12px;}.s-btn{width:36px;height:32px;font-size:13px;}}
+  @media(max-width:580px){.info-cards,.scale-boxes,.name-row{grid-template-columns:1fr;}.top-row{grid-template-columns:1fr 40px 40px 40px 40px;font-size:11px;}.s-btn{width:36px;height:32px;font-size:13px;}}
 </style>
 </head>
 <body>
@@ -185,7 +185,7 @@
     <div style="background:rgba(200,168,75,0.1);border:1px solid rgba(200,168,75,0.35);border-radius:14px;padding:20px 24px;margin-bottom:28px">
       <div style="font-size:11px;font-weight:600;color:var(--gold);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:6px">Fast fertig!</div>
       <div style="font-family:'Playfair Display',serif;font-size:20px;color:var(--navy);margin-bottom:8px">Noch eine letzte Frage zu Ihren Sweet-Spot-Branchen</div>
-      <div style="font-size:13px;color:var(--muted);line-height:1.6">Sie haben folgende Branchen mit hoher Kompetenz <em>und</em> hohem Interesse bewertet. Wie schätzen Sie die Profitabilität der Mandatsarbeit dort ein?</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.6">Sie haben folgende Branchen besonders hoch bewertet. Wie schätzen Sie die Profitabilität der Mandatsarbeit dort ein? Die Frage ist optional — «Kann ich nicht einschätzen» ist immer eine gültige Antwort.</div>
     </div>
     <div id="profCards"></div>
     <div class="quiz-nav" style="margin-top:20px">
@@ -215,7 +215,7 @@
     <div class="results-meta" id="resultMeta"></div>
     <div class="chart-wrap">
       <h3>Sweet-Spot-Matrix</h3>
-      <div class="chart-sub">X = Kompetenz · Y = Interesse · Farbe = Profitabilität (Coach-Einschätzung) · Tooltip = Details</div>
+      <div class="chart-sub">X = Kompetenz · Y = Interesse · <span style="color:var(--gold);font-weight:500">Gold</span> = Absoluter Sweet Spot (K=5 und I=5) · Farbe = Profitabilität · Zahl = Anzahl Branchen</div>
       <div class="p-legend">
         <span><span class="pd" style="background:#1a2744"></span>Sehr hoch (P=5)</span>
         <span><span class="pd" style="background:#2E75B6"></span>Hoch (P=4)</span>
@@ -238,6 +238,7 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script>
@@ -259,12 +260,12 @@ const BRANCHES=[
   {id:"L",label:"Finanz- und Versicherungsdienstleistungen",cl:false,subs:["Erbringung von Finanzdienstleistungen","Private Banking & Wealth Management","Family Office & Stiftungen","Versicherungen, Rückversicherungen und Pensionskassen","Mit Finanz- und Versicherungsdienstleistungen verbundene Tätigkeiten"]},
   {id:"M",label:"Grundstücks-, Wohnungswesen und Immobiliendienstleistungen",cl:false,subs:["Grundstücks- und Wohnungswesen (Kauf, Verkauf, Vermietung)","Makler und Immobilienvermittlung","Facility Management & Gebäudebewirtschaftung"]},
   {id:"N",label:"Wissenschaftliche und technische Dienstleistungen",cl:false,subs:["Rechts- und Steuerberatung, Wirtschaftsprüfung","Verwaltung und Führung von Unternehmen, Unternehmensberatung","Tätigkeiten von Architektur- und Ingenieurbüros","Forschung und Entwicklung","Werbung, Marktforschung und Public-Relations-Beratung","Sonstige wissenschaftliche und technische Tätigkeiten"]},
-  {id:"O",label:"Sonstige wirtschaftliche Dienstleistungen",cl:false,subs:["Vermietung und Leasing","Vermittlung und Überlassung von Arbeitskräften","Wach- und Sicherheitsdienste","Erbringung von wirtschaftlichen Dienstleistungen für Unternehmen"]},
-  {id:"P",label:"Öffentliche Verwaltung und Sozialversicherung",cl:false,subs:["Öffentliche Verwaltung und Sozialversicherung","Defense & Sicherheitsindustrie"]},
+  {id:"O",label:"Sonstige wirtschaftliche Dienstleistungen",cl:false,subs:["Vermietung und Leasing von Fahrzeugen, Maschinen und Gütern","Vermittlung und Überlassung von Arbeitskräften","Wach- und Sicherheitsdienste","Erbringung von wirtschaftlichen Dienstleistungen für Unternehmen"]},
+  {id:"P",label:"Öffentliche Verwaltung, Defense & Sozialversicherung",cl:false,subs:["Öffentliche Verwaltung und Sozialversicherung","Defense & Sicherheitsindustrie"]},
   {id:"Q",label:"Erziehung und Unterricht",cl:false,subs:["Erziehung und Unterricht (allgemein)","Hochschulen und Forschungsinstitutionen","Berufsbildung und Weiterbildung"]},
   {id:"R",label:"Gesundheits- und Sozialwesen",cl:false,subs:["Gesundheitswesen (Spitäler, Kliniken, Arztpraxen)","Pharma & MedTech","Life Sciences & Biotech","Heime (ohne Erholungs- und Ferienheime)","Sozialwesen, ohne Heime"]},
-  {id:"S",label:"Kunst, Sport und Erholung",cl:false,subs:["Kunstschaffende Tätigkeiten und darstellende Kunst","Bibliotheken, Archive, Museen","Spiel-, Wett- und Lotteriewesen","Dienstleistungen des Sports und der Unterhaltung","Gaming & eSports","Sportverbände & internationaler Sport"]},
-  {id:"T",label:"Sonstige Dienstleistungen, NGOs und internationale Organisationen",cl:false,subs:["Interessenvertretungen sowie kirchliche und religiöse Vereine","NGOs & internationale Organisationen","Diplomatische Missionen und internationale Institutionen","Reparatur und Instandhaltung","Erbringung von überwiegend persönlichen Dienstleistungen"]},
+  {id:"S",label:"Kunst, Sport und Erholung",cl:false,subs:["Kunstschaffende Tätigkeiten und darstellende Kunst","Galerien, Kunsthandel und Auktionen","Bibliotheken, Archive, Museen","Spiel-, Wett- und Lotteriewesen","Dienstleistungen des Sports und der Unterhaltung","Gaming & eSports","Sportverbände & internationaler Sport"]},
+  {id:"T",label:"Sonstige Dienstleistungen, NGOs und internationale Organisationen",cl:false,subs:["Interessenvertretungen sowie kirchliche und religiöse Vereine","NGOs & internationale Organisationen","Diplomatische Missionen und internationale Institutionen","Reparatur und Instandhaltung von Datenverarbeitungsgeräten und Gebrauchsgütern","Erbringung von überwiegend persönlichen Dienstleistungen"]},
   {id:"U",label:"Private Haushalte mit Hauspersonal (selten mandatsrelevant)",cl:false,subs:["Private Haushalte mit Hauspersonal","Herstellung von Waren durch private Haushalte"]},
   {id:"V",label:"Exterritoriale Organisationen und Körperschaften",cl:false,subs:["Exterritoriale Organisationen und Körperschaften"]},
   {id:"X1",label:"Künstliche Intelligenz & Automation",cl:true,subs:["KI-Regulierung und Haftungsfragen","Automatisierung und Robotik","KI in der Rechtspraxis"]},
@@ -282,7 +283,11 @@ const mo=new Set();
 window.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('dateInput').value=new Date().toISOString().split('T')[0];
   const p=new URLSearchParams(location.search).get('coach');
-  if(p){try{renderCoachResults(JSON.parse(atob(p)));}catch(e){}}
+  if(p){try{
+    // Try LZString decompression first, fall back to plain base64
+    const raw = typeof LZString!=='undefined' ? LZString.decompressFromEncodedURIComponent(p) : atob(p);
+    renderCoachResults(JSON.parse(raw));
+  }catch(e){}}
 });
 
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
@@ -402,7 +407,23 @@ function prevPage(){if(cur>0){cur--;rp();}}
 let profAnswers={};
 
 function getSweetSpots(){
-  return BRANCHES.map((b,i)=>({b,i,a:answers[i]})).filter(({a})=>a.k>=4&&a.i>=4).map(({i})=>i);
+  const all = BRANCHES.map((b,i)=>({i, a:answers[i]}));
+  // Tier 1: K=5 AND I=5
+  const t1 = all.filter(({a})=>a.k===5&&a.i===5).map(({i})=>i);
+  if(t1.length >= 3) return t1;
+  // Tier 2: add K=5+I=4 or K=4+I=5
+  const t2 = all.filter(({a})=>(a.k===5&&a.i===4)||(a.k===4&&a.i===5)).map(({i})=>i);
+  const combined = [...new Set([...t1,...t2])];
+  if(combined.length >= 3) return combined.slice(0,5);
+  // Tier 3: add K=4+I=4
+  const t3 = all.filter(({a})=>a.k===4&&a.i===4).map(({i})=>i);
+  const combined2 = [...new Set([...combined,...t3])];
+  if(combined2.length >= 1) return combined2.slice(0,5);
+  // Fallback: top 5 by score
+  return all
+    .filter(({a})=>a.k>0&&a.i>0)
+    .sort((x,y)=>(y.a.k*y.a.i)-(x.a.k*x.a.i))
+    .slice(0,5).map(({i})=>i);
 }
 
 function showProfScreen(){
@@ -442,7 +463,11 @@ function doSubmit(){
   const date=document.getElementById('dateInput').value||new Date().toLocaleDateString('de-CH');
   // Merge profitability into answers
   const answersWithProf=answers.map((a,i)=>({...a,prof:profAnswers[i]||null}));
-  const payload=btoa(JSON.stringify({answers:answersWithProf,name,date}));
+  // Compress payload to avoid URL length issues with sub-group data
+  const json=JSON.stringify({answers:answersWithProf,name,date});
+  const payload=typeof LZString!=='undefined'
+    ? LZString.compressToEncodedURIComponent(json)
+    : btoa(json);
   const coachUrl=location.origin+location.pathname+'?coach='+payload;
   const top5=answers.map((a,i)=>({label:BRANCHES[i].label.split('(')[0].trim(),score:((a.k||0)+(a.i||0))/2})).sort((a,b)=>b.score-a.score).slice(0,5).map(x=>x.label+': '+x.score.toFixed(1)).join('\n');
   showScreen('confirmation');
@@ -508,7 +533,7 @@ function renderCoachResults(decoded){
     const k=items[0].k,iv=items[0].i;
     const maxP=Math.max(...items.map(s=>s.p));
     const avg=(k+iv)/2;
-    const sweet=k>=4&&iv>=4;
+    const sweet=k===5&&iv===5;
     const c=pc(maxP);
     // Color by P but tint sweet spots gold
     const bg = sweet ? 'rgba(200,168,75,0.88)' : c.bg;
@@ -526,7 +551,7 @@ function renderCoachResults(decoded){
 
   Chart.register({id:'zl',afterDraw(c){
     const ctx2=c.ctx,xs=c.scales.x,ys=c.scales.y,ca=c.chartArea;
-    const x4=xs.getPixelForValue(4),y4=ys.getPixelForValue(4);
+    const x4=xs.getPixelForValue(5),y4=ys.getPixelForValue(5);
     ctx2.save();
     ctx2.setLineDash([5,4]);ctx2.strokeStyle='rgba(200,168,75,0.45)';ctx2.lineWidth=1;
     ctx2.beginPath();ctx2.moveTo(x4,ca.top);ctx2.lineTo(x4,ca.bottom);ctx2.stroke();
