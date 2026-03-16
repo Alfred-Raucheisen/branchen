@@ -108,7 +108,7 @@
   .pd{width:13px;height:13px;border-radius:50%;display:inline-block;flex-shrink:0;}
   .top-section{margin-bottom:32px;}
   .top-section h3{font-family:'Playfair Display',serif;font-size:18px;color:var(--navy);margin-bottom:14px;}
-  .top-row{display:grid;grid-template-columns:1fr 64px 64px 52px;gap:8px;align-items:center;padding:9px 14px;border-radius:10px;margin-bottom:5px;font-size:13px;}
+  .top-row{display:grid;grid-template-columns:1fr 52px 52px 52px 52px;gap:8px;align-items:center;padding:9px 14px;border-radius:10px;margin-bottom:5px;font-size:13px;}
   .top-row.hdr{background:var(--navy);color:white;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;border-radius:8px;}
   .top-row.hdr div{color:rgba(255,255,255,0.8);}
   .top-row.even{background:var(--light);}
@@ -176,6 +176,22 @@
       <button class="btn-nav btn-prev" id="btnPrev" onclick="prevPage()">← Zurück</button>
       <span class="page-counter" id="pageCounter"></span>
       <button class="btn-nav btn-next" id="btnNext" onclick="nextPage()">Weiter →</button>
+    </div>
+  </div>
+</div>
+
+<div id="profitability" class="screen">
+  <div class="container" style="padding-top:40px;padding-bottom:80px">
+    <div style="background:rgba(200,168,75,0.1);border:1px solid rgba(200,168,75,0.35);border-radius:14px;padding:20px 24px;margin-bottom:28px">
+      <div style="font-size:11px;font-weight:600;color:var(--gold);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:6px">Fast fertig!</div>
+      <div style="font-family:'Playfair Display',serif;font-size:20px;color:var(--navy);margin-bottom:8px">Noch eine letzte Frage zu Ihren Sweet-Spot-Branchen</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.6">Sie haben folgende Branchen mit hoher Kompetenz <em>und</em> hohem Interesse bewertet. Wie schätzen Sie die Profitabilität der Mandatsarbeit dort ein?</div>
+    </div>
+    <div id="profCards"></div>
+    <div class="quiz-nav" style="margin-top:20px">
+      <button class="btn-nav btn-prev" onclick="showScreen('quiz');rp()">← Zurück</button>
+      <span class="page-counter">Bonusrunde</span>
+      <button class="btn-nav btn-next" onclick="doSubmit()">Absenden →</button>
     </div>
   </div>
 </div>
@@ -376,16 +392,57 @@ function getW(){
 function nextPage(){
   const w=getW();
   if(w.length){const el=document.getElementById('pageWarn');el.innerHTML='⚠️ '+w.join('<br>⚠️ ');el.style.display='block';el.scrollIntoView({behavior:'smooth',block:'nearest'});return;}
-  if(cur===PAGES-1){submitAndShow();return;}
+  if(cur===PAGES-1){showProfScreen();return;}
   cur++;rp();
 }
 
 function prevPage(){if(cur>0){cur--;rp();}}
 
-function submitAndShow(){
+// ── PROFITABILITY SCREEN ──────────────────────────────────────────────────────
+let profAnswers={};
+
+function getSweetSpots(){
+  return BRANCHES.map((b,i)=>({b,i,a:answers[i]})).filter(({a})=>a.k>=4&&a.i>=4).map(({i})=>i);
+}
+
+function showProfScreen(){
+  const idx=getSweetSpots();
+  if(idx.length===0){doSubmit();return;}
+  showScreen('profitability');
+  renderProfCards(idx);
+}
+
+function renderProfCards(indices){
+  const opts=[{val:'low',label:'Tief'},{val:'mid',label:'Mittel'},{val:'high',label:'Hoch'},{val:'veryhigh',label:'Sehr hoch'},{val:'unknown',label:'Kann ich nicht einschätzen'}];
+  const bgc={low:'#D4DDF0',mid:'#C8A84B',high:'#2E75B6',veryhigh:'#1a2744',unknown:'#e8e8e8'};
+  const tc={low:'#4a5a7a',mid:'white',high:'white',veryhigh:'white',unknown:'#999'};
+  let html='';
+  indices.forEach(i=>{
+    const b=BRANCHES[i],sel=profAnswers[i]||null;
+    html+='<div style="background:var(--card);border:1.5px solid '+(sel?'var(--gold)':'var(--border)')+';border-radius:14px;padding:20px 22px;margin-bottom:14px">';
+    html+='<div style="font-family:\'Playfair Display\',serif;font-size:15px;color:var(--navy);font-weight:700;margin-bottom:14px">'+b.label.split('(')[0].trim()+'</div>';
+    html+='<div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">Profitabilität der Mandatsarbeit</div>';
+    html+='<div style="display:flex;gap:8px;flex-wrap:wrap">';
+    opts.forEach(o=>{
+      const act=sel===o.val;
+      html+='<button onclick="setProf('+i+',\''+o.val+'\')" style="padding:7px 14px;border-radius:20px;border:1.5px solid '+(act?bgc[o.val]:'var(--border)')+';background:'+(act?bgc[o.val]:'transparent')+';color:'+(act?tc[o.val]:'var(--muted)')+';font-size:12px;font-weight:500;cursor:pointer;font-family:\'DM Sans\',sans-serif;">'+o.label+'</button>';
+    });
+    html+='</div></div>';
+  });
+  document.getElementById('profCards').innerHTML=html;
+}
+
+function setProf(idx,val){
+  profAnswers[idx]=profAnswers[idx]===val?null:val;
+  renderProfCards(getSweetSpots());
+}
+
+function doSubmit(){
   const name=document.getElementById('nameInput').value.trim()||'(kein Name)';
   const date=document.getElementById('dateInput').value||new Date().toLocaleDateString('de-CH');
-  const payload=btoa(JSON.stringify({answers,name,date}));
+  // Merge profitability into answers
+  const answersWithProf=answers.map((a,i)=>({...a,prof:profAnswers[i]||null}));
+  const payload=btoa(JSON.stringify({answers:answersWithProf,name,date}));
   const coachUrl=location.origin+location.pathname+'?coach='+payload;
   const top5=answers.map((a,i)=>({label:BRANCHES[i].label.split('(')[0].trim(),score:((a.k||0)+(a.i||0))/2})).sort((a,b)=>b.score-a.score).slice(0,5).map(x=>x.label+': '+x.score.toFixed(1)).join('\n');
   showScreen('confirmation');
@@ -394,6 +451,9 @@ function submitAndShow(){
     .then(()=>{const el=document.getElementById('conf-sending');el.textContent='✓ Auswertung wurde an den Coach übermittelt.';el.className='conf-status success';})
     .catch(()=>{const el=document.getElementById('conf-sending');el.textContent='⚠️ Übermittlung fehlgeschlagen – bitte Coach direkt informieren.';el.className='conf-status error';});
 }
+
+function submitAndShow(){doSubmit();}
+
 
 let ci=null;
 function pc(p){
@@ -410,10 +470,14 @@ function renderCoachResults(decoded){
   document.getElementById('resultName').textContent=name||'Auswertung';
   document.getElementById('resultMeta').textContent=(date||'')+' · Branchen-Assessment';
 
+  const profMap={low:2,mid:3,high:4,veryhigh:5,unknown:null};
   const scored=BRANCHES.map((b,i)=>{
     const a=ans[i]||{k:null,i:null,subs:{}};
-    const k=a.k||0,iv=a.i||0,p=PD[b.id]||3;
-    return{label:b.label.split('(')[0].trim(),id:b.id,k,i:iv,p,score:k*iv,avg:(k+iv)/2};
+    const k=a.k||0,iv=a.i||0;
+    const userProf=a.prof?profMap[a.prof]:null;
+    const p=userProf!==null?userProf:(PD[b.id]||3);
+    const pSource=userProf!==null?'user':'default';
+    return{label:b.label.split('(')[0].trim(),id:b.id,k,i:iv,p,pSource,score:k*iv,avg:(k+iv)/2};
   });
 
   // Top-5 cards
@@ -485,8 +549,9 @@ function renderCoachResults(decoded){
   if(ovl.length)document.getElementById('overlapNote').innerHTML='<strong style="color:var(--navy)">Mehrere Branchen an gleicher Position:</strong> '+ovl.map(d=>'K='+d.origK+'/I='+d.origI+': '+d.labels.join(', ')).join(' · ');
 
   const srt=[...scored].sort((a,b)=>b.score-a.score||b.avg-a.avg);
-  document.getElementById('topTable').innerHTML='<div class="top-row hdr"><div>Branche</div><div>K</div><div>I</div><div>Score</div></div>'+
-    srt.map((s,idx)=>'<div class="top-row '+(idx%2===0?'even':'odd')+'"><div>'+s.label+'</div><div><span class="pill pk">'+(s.k||'–')+'</span></div><div><span class="pill pi">'+(s.i||'–')+'</span></div><div><span class="pill ps">'+(s.score>0?s.score:'–')+'</span></div></div>').join('');
+  document.getElementById('topTable').innerHTML='<div class="top-row hdr"><div>Branche</div><div>K</div><div>I</div><div>P</div><div>Score</div></div>'+
+    srt.map((s,idx)=>'<div class="top-row '+(idx%2===0?'even':'odd')+'"><div>'+s.label+'</div><div><span class="pill pk">'+(s.k||'–')+'</span></div><div><span class="pill pi">'+(s.i||'–')+'</span></div><div><span class="pill ps" title="'+(s.pSource==='user'?'Eigene Einschätzung':'Coach-Schätzung')+'">'+(s.p||'–')+(s.pSource==='default'?'*':'')+'</span></div><div><span class="pill ps">'+(s.score>0?s.score:'–')+'</span></div></div>').join('')+
+    '<div style="font-size:11px;color:var(--muted);padding:8px 14px">* = Coach-Schätzung (kein eigener Wert angegeben)</div>';
 
   document.getElementById('rawData').textContent=scored.map(s=>s.id+' '+s.label+': K='+s.k+' I='+s.i+' Score='+s.score).join('\n');
 }
