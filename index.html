@@ -294,7 +294,17 @@ window.addEventListener('DOMContentLoaded',()=>{
 });
 
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
-function startQuiz(){showScreen('quiz');rp();}
+function startQuiz(){
+  const name=document.getElementById('nameInput').value.trim();
+  if(!name){
+    const el=document.getElementById('nameInput');
+    el.style.borderColor='#C0392B';
+    el.placeholder='Bitte Name eintragen';
+    el.focus();
+    return;
+  }
+  showScreen('quiz');rp();
+}
 function isTrig(a){return a.k===5||a.i===5;}
 
 const NEW_SUBS=['Erneuerbare','Kreislauf','Online-Handel','Luxusgüter','Kreativwirtschaft','Digital Economy','Cybersecurity','Blockchain','Krypto','Private Banking','Family Office','Makler','Facility','Defense','Pharma','Life Sciences','Gaming','Sportverbände','NGOs','Diplomatische','Events'];
